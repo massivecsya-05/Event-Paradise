@@ -1,0 +1,200 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('create_event') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-plus-circle"></i> New Event
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Events</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ events|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-calendar-event fs-2 text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Upcoming Events</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ upcoming_events|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-clock-history fs-2 text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Guests</div>
+                        <div class="row no-gutters align-items-center">
+                            <div class="col-auto">
+                                <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">
+                                    {% set total_guests = 0 %}
+                                    {% for event in events %}
+                                        {% set total_guests = total_guests + event.guests|length %}
+                                    {% endfor %}
+                                    {{ total_guests }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people fs-2 text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Active Vendors</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% set total_vendors = 0 %}
+                            {% for event in events %}
+                                {% set total_vendors = total_vendors + event.vendors|length %}
+                            {% endfor %}
+                            {{ total_vendors }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-truck fs-2 text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Events -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Upcoming Events</h6>
+                <a href="{{ url_for('events') }}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if upcoming_events %}
+                    {% for event in upcoming_events %}
+                        <div class="card mb-3 event-card" data-event-id="{{ event.id }}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="card-title">{{ event.title }}</h5>
+                                        <p class="card-text text-muted mb-2">{{ event.description[:100] }}{% if event.description|length > 100 %}...{% endif %}</p>
+                                        <div class="d-flex gap-3">
+                                            <small class="text-muted">
+                                                <i class="bi bi-geo-alt"></i> {{ event.venue }}
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar3"></i> {{ event.start_date.strftime('%b %d, %Y %I:%M %p') }}
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="bi bi-currency-dollar"></i> ${{ "%.2f"|format(event.budget) }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-primary status-badge">{{ event.status }}</span>
+                                        <div class="mt-2">
+                                            <a href="{{ url_for('event_details', event_id=event.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-calendar-x fs-1 text-muted"></i>
+                        <p class="text-muted mt-2">No upcoming events found.</p>
+                        <a href="{{ url_for('create_event') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Create Your First Event
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Recent Activity -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+            </div>
+            <div class="card-body">
+                {% if events %}
+                    {% for event in events[:5] %}
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-calendar-event fs-4 text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">{{ event.title }}</h6>
+                                <small class="text-muted">{{ event.created_at.strftime('%b %d, %Y') }}</small>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No recent activity</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('create_event') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create New Event
+                    </a>
+                    <a href="{{ url_for('events') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar3"></i> Manage Events
+                    </a>
+                    {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('analytics') }}" class="btn btn-outline-info">
+                            <i class="bi bi-graph-up"></i> View Analytics
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,317 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2">Manage Payments - {{ event.title }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('events') }}">Events</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('event_details', event_id=event.id) }}">{{ event.title }}</a></li>
+                <li class="breadcrumb-item active">Manage Payments</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('event_details', event_id=event.id) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Event
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Revenue</h6>
+                        <h3 class="mb-0">
+                            {% set total_revenue = payments|selectattr('status', 'equalto', 'completed')|map(attribute='amount')|sum %}
+                            ${{ "%.2f"|format(total_revenue) }}
+                        </h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-cash-stack fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Completed Payments</h6>
+                        <h3 class="mb-0">{{ payments|selectattr('status', 'equalto', 'completed')|list|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-check-circle fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Pending Payments</h6>
+                        <h3 class="mb-0">{{ payments|selectattr('status', 'equalto', 'pending')|list|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-clock fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Budget Utilization</h6>
+                        <h3 class="mb-0">
+                            {% set budget_percentage = (total_revenue / event.budget * 100) if event.budget > 0 else 0 %}
+                            {{ "%.1f"|format(budget_percentage) }}%
+                        </h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-pie-chart fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Payment Form -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-credit-card"></i> Process New Payment</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="amount" class="form-label">Amount ($)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control" id="amount" name="amount" 
+                               min="0" step="0.01" required>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="payment_type" class="form-label">Payment Type</label>
+                    <select class="form-select" id="payment_type" name="payment_type" required>
+                        <option value="">Select Type</option>
+                        <option value="ticket">Ticket Sale</option>
+                        <option value="vendor">Vendor Payment</option>
+                        <option value="deposit">Deposit</option>
+                        <option value="sponsorship">Sponsorship</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="payment_method" class="form-label">Payment Method</label>
+                    <select class="form-select" id="payment_method" name="payment_method" required>
+                        <option value="">Select Method</option>
+                        <option value="credit_card">Credit Card</option>
+                        <option value="debit_card">Debit Card</option>
+                        <option value="mobile_money">Mobile Money</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="cash">Cash</option>
+                        <option value="check">Check</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-circle"></i> Process Payment
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Payment List -->
+<div class="card shadow">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Payment History</h5>
+        <div>
+            <button class="btn btn-light btn-sm" onclick="exportPayments()">
+                <i class="bi bi-download"></i> Export
+            </button>
+            <button class="btn btn-light btn-sm" onclick="generateReceipts()">
+                <i class="bi bi-receipt"></i> Generate Receipts
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if payments %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="paymentTable">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Amount</th>
+                            <th>Type</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                            <tr>
+                                <td>
+                                    <code class="bg-light p-1 rounded">{{ payment.transaction_id }}</code>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">${{ "%.2f"|format(payment.amount) }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ payment.payment_type.replace('_', ' ').title() }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ payment.payment_method.replace('_', ' ').title() }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if payment.status == 'completed' %}success{% elif payment.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                        {{ payment.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small>{{ payment.created_at.strftime('%b %d, %Y %I:%M %p') }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewPayment({{ payment.id }})">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="editPayment({{ payment.id }})">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" onclick="generateReceipt({{ payment.id }})">
+                                            <i class="bi bi-receipt"></i>
+                                        </button>
+                                        {% if payment.status == 'pending' %}
+                                            <button class="btn btn-sm btn-outline-warning" onclick="processPayment({{ payment.id }})">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-credit-card fs-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No payments recorded yet</h4>
+                <p class="text-muted">Start by processing your first payment for the event.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Financial Summary -->
+<div class="card shadow mt-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Financial Summary</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Revenue by Payment Type</h6>
+                <canvas id="paymentTypeChart" width="400" height="200"></canvas>
+            </div>
+            <div class="col-md-6">
+                <h6>Payment Methods Distribution</h6>
+                <canvas id="paymentMethodChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    function viewPayment(paymentId) {
+        // In a real application, this would show payment details in a modal
+        alert(`View payment details for payment ID: ${paymentId}`);
+    }
+
+    function editPayment(paymentId) {
+        // In a real application, this would open an edit form
+        alert(`Edit payment details for payment ID: ${paymentId}`);
+    }
+
+    function generateReceipt(paymentId) {
+        // In a real application, this would generate and download a receipt
+        alert(`Receipt would be generated and downloaded for payment ID: ${paymentId}`);
+    }
+
+    function processPayment(paymentId) {
+        if (confirm('Are you sure you want to process this payment?')) {
+            // In a real application, this would make an AJAX call to process the payment
+            console.log(`Processing payment ${paymentId}`);
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = 'Payment processed successfully! <button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            document.querySelector('.card-body').prepend(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+    }
+
+    function exportPayments() {
+        // In a real application, this would export the payment list to CSV/Excel
+        alert('Export functionality would generate a CSV file with all payment information including transaction IDs, amounts, types, and status.');
+    }
+
+    function generateReceipts() {
+        // In a real application, this would generate receipts for all completed payments
+        alert('Receipts would be generated and downloaded for all completed payments.');
+    }
+
+    // Initialize search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'form-control form-control-sm mb-3';
+        searchInput.placeholder = 'Search payments...';
+        searchInput.addEventListener('keyup', function() {
+            const filter = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#paymentTable tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+        
+        const cardBody = document.querySelector('#paymentTable').closest('.card-body');
+        cardBody.insertBefore(searchInput, document.querySelector('#paymentTable'));
+
+        // Initialize charts (using Chart.js would be ideal in a real application)
+        initializeCharts();
+    });
+
+    function initializeCharts() {
+        // This is a placeholder for chart initialization
+        // In a real application, you would use Chart.js or similar library
+        console.log('Charts would be initialized here showing payment type distribution and payment method breakdown');
+    }
+</script>
+{% endblock %}
+{% endblock %}

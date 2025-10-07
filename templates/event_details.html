@@ -1,0 +1,253 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2">{{ event.title }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('events') }}">Events</a></li>
+                <li class="breadcrumb-item active">{{ event.title }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('events') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Events
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Event Overview -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Event Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> 
+                            <span class="badge bg-{% if event.status == 'planned' %}primary{% elif event.status == 'ongoing' %}success{% elif event.status == 'completed' %}info{% else %}danger{% endif %}">
+                                {{ event.status }}
+                            </span>
+                        </p>
+                        <p><strong>Venue:</strong> {{ event.venue }}</p>
+                        <p><strong>Start Date:</strong> {{ event.start_date.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                        <p><strong>End Date:</strong> {{ event.end_date.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Budget:</strong> ${{ "%.2f"|format(event.budget) }}</p>
+                        <p><strong>Total Guests:</strong> {{ guests|length }}</p>
+                        <p><strong>Vendors:</strong> {{ vendors|length }}</p>
+                        <p><strong>Created:</strong> {{ event.created_at.strftime('%B %d, %Y') }}</p>
+                    </div>
+                </div>
+                {% if event.description %}
+                    <hr>
+                    <h6>Description</h6>
+                    <p>{{ event.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('manage_guests', event_id=event.id) }}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-people"></i><br>
+                            <small>Manage Guests</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('manage_vendors', event_id=event.id) }}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-truck"></i><br>
+                            <small>Manage Vendors</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('manage_payments', event_id=event.id) }}" class="btn btn-outline-info w-100">
+                            <i class="bi bi-credit-card"></i><br>
+                            <small>Manage Payments</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-warning w-100" onclick="generateReport()">
+                            <i class="bi bi-file-earmark-text"></i><br>
+                            <small>Generate Report</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Event Statistics -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Guest Check-in</span>
+                        <span data-event-status="{{ event.id }}">{{ event.status }}</span>
+                    </div>
+                    <div class="progress">
+                        {% set checked_in = guests|selectattr('check_in_status')|list|length %}
+                        {% set total_guests = guests|length %}
+                        {% set percentage = (checked_in / total_guests * 100) if total_guests > 0 else 0 %}
+                        <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%">
+                            {{ checked_in }}/{{ total_guests }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Budget Used</span>
+                        <span data-total-payments="{{ event.id }}">
+                            {% set total_payments = payments|selectattr('status', 'equalto', 'completed')|map(attribute='amount')|sum %}
+                            ${{ "%.2f"|format(total_payments) }}
+                        </span>
+                    </div>
+                    <div class="progress">
+                        {% set budget_percentage = (total_payments / event.budget * 100) if event.budget > 0 else 0 %}
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ budget_percentage }}%">
+                            {{ "%.1f"|format(budget_percentage) }}%
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h4 data-guest-count="{{ event.id }}">{{ guests|length }}</h4>
+                        <small class="text-muted">Guests</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 data-checked-in-count="{{ event.id }}">{{ checked_in }}</h4>
+                        <small class="text-muted">Checked In</small>
+                    </div>
+                    <div class="col-4">
+                        <h4>{{ vendors|length }}</h4>
+                        <small class="text-muted">Vendors</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                {% if guests or vendors or payments %}
+                    {% for guest in guests[:3] %}
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-person-plus text-primary me-2"></i>
+                            <small>{{ guest.name }} added as guest</small>
+                        </div>
+                    {% endfor %}
+                    {% for vendor in vendors[:2] %}
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-truck text-success me-2"></i>
+                            <small>{{ vendor.name }} ({{ vendor.service_type }}) added</small>
+                        </div>
+                    {% endfor %}
+                    {% for payment in payments[:2] %}
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-credit-card text-info me-2"></i>
+                            <small>${{ "%.2f"|format(payment.amount) }} payment received</small>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No recent activity</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Guest List Preview -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-people"></i> Guest List ({{ guests|length }})</h5>
+        <a href="{{ url_for('manage_guests', event_id=event.id) }}" class="btn btn-light btn-sm">
+            <i class="bi bi-pencil"></i> Manage
+        </a>
+    </div>
+    <div class="card-body">
+        {% if guests %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Ticket #</th>
+                            <th>RSVP</th>
+                            <th>Check-in</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for guest in guests[:5] %}
+                            <tr>
+                                <td>{{ guest.name }}</td>
+                                <td>{{ guest.email }}</td>
+                                <td><code>{{ guest.ticket_number }}</code></td>
+                                <td>
+                                    <span class="badge bg-{% if guest.rsvp_status == 'confirmed' %}success{% elif guest.rsvp_status == 'declined' %}danger{% else %}warning{% endif %}">
+                                        {{ guest.rsvp_status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if guest.check_in_status %}
+                                        <span class="badge bg-success">Checked In</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Not Checked In</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if guests|length > 5 %}
+                <div class="text-center">
+                    <a href="{{ url_for('manage_guests', event_id=event.id) }}" class="btn btn-sm btn-outline-primary">
+                        View All {{ guests|length }} Guests
+                    </a>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-3">
+                <i class="bi bi-people fs-1 text-muted"></i>
+                <p class="text-muted mt-2">No guests added yet</p>
+                <a href="{{ url_for('manage_guests', event_id=event.id) }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-person-plus"></i> Add Guests
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    function generateReport() {
+        alert('Report generation feature would be implemented here. This would generate a comprehensive PDF report of the event including guest lists, vendor information, financial summary, and analytics.');
+    }
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,279 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2">Manage Guests - {{ event.title }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('events') }}">Events</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('event_details', event_id=event.id) }}">{{ event.title }}</a></li>
+                <li class="breadcrumb-item active">Manage Guests</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('event_details', event_id=event.id) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Event
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Guest Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Guests</h6>
+                        <h3 class="mb-0">{{ guests|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-people fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Checked In</h6>
+                        <h3 class="mb-0">{{ guests|selectattr('check_in_status')|list|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-check-circle fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Confirmed RSVP</h6>
+                        <h3 class="mb-0">{{ guests|selectattr('rsvp_status', 'equalto', 'confirmed')|list|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-check2-square fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Pending RSVP</h6>
+                        <h3 class="mb-0">{{ guests|selectattr('rsvp_status', 'equalto', 'pending')|list|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-clock fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Guest Form -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-person-plus"></i> Add New Guest</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="name" class="form-label">Full Name *</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="email" class="form-label">Email *</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="phone" class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" id="phone" name="phone">
+                </div>
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-person-plus"></i> Add Guest
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Guest List -->
+<div class="card shadow">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Guest List</h5>
+        <div>
+            <button class="btn btn-light btn-sm" onclick="exportGuests()">
+                <i class="bi bi-download"></i> Export
+            </button>
+            <button class="btn btn-light btn-sm" onclick="sendInvitations()">
+                <i class="bi bi-envelope"></i> Send Invitations
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if guests %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="guestTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Ticket #</th>
+                            <th>RSVP Status</th>
+                            <th>Check-in Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for guest in guests %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-person-circle fs-4 me-2 text-muted"></i>
+                                        <div>
+                                            <div class="fw-bold">{{ guest.name }}</div>
+                                            <small class="text-muted">Added {{ guest.created_at.strftime('%b %d, %Y') }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ guest.email }}</td>
+                                <td>{{ guest.phone or 'N/A' }}</td>
+                                <td><code class="bg-light p-1 rounded">{{ guest.ticket_number }}</code></td>
+                                <td>
+                                    <select class="form-select form-select-sm" onchange="updateRSVP({{ guest.id }}, this.value)">
+                                        <option value="pending" {% if guest.rsvp_status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="confirmed" {% if guest.rsvp_status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                        <option value="declined" {% if guest.rsvp_status == 'declined' %}selected{% endif %}>Declined</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    {% if guest.check_in_status %}
+                                        <span class="badge bg-success">Checked In</span>
+                                    {% else %}
+                                        <form method="POST" action="{{ url_for('check_in_guest', event_id=event.id, guest_id=guest.id) }}" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                                <i class="bi bi-check-circle"></i> Check In
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewGuest({{ guest.id }})">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="editGuest({{ guest.id }})">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteGuest({{ guest.id }})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-people fs-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No guests added yet</h4>
+                <p class="text-muted">Start by adding your first guest to the event.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    function updateRSVP(guestId, status) {
+        // In a real application, this would make an AJAX call to update the RSVP status
+        console.log(`Updating RSVP for guest ${guestId} to ${status}`);
+        // Show success message
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show';
+        alert.innerHTML = `RSVP status updated to ${status}! <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.querySelector('.card-body').prepend(alert);
+        setTimeout(() => alert.remove(), 3000);
+    }
+
+    function viewGuest(guestId) {
+        // In a real application, this would show guest details in a modal
+        alert(`View guest details for guest ID: ${guestId}`);
+    }
+
+    function editGuest(guestId) {
+        // In a real application, this would open an edit form
+        alert(`Edit guest details for guest ID: ${guestId}`);
+    }
+
+    function deleteGuest(guestId) {
+        if (confirm('Are you sure you want to delete this guest?')) {
+            // In a real application, this would make an AJAX call to delete the guest
+            console.log(`Deleting guest ${guestId}`);
+            // Remove the row from the table
+            const row = event.target.closest('tr');
+            row.remove();
+            
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = 'Guest deleted successfully! <button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            document.querySelector('.card-body').prepend(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+    }
+
+    function exportGuests() {
+        // In a real application, this would export the guest list to CSV/Excel
+        alert('Export functionality would generate a CSV file with all guest information including names, emails, ticket numbers, and RSVP status.');
+    }
+
+    function sendInvitations() {
+        // In a real application, this would send email invitations to all guests
+        alert('Invitation emails would be sent to all guests with their ticket information and event details.');
+    }
+
+    // Initialize DataTable for better table management
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add search functionality
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'form-control form-control-sm mb-3';
+        searchInput.placeholder = 'Search guests...';
+        searchInput.addEventListener('keyup', function() {
+            const filter = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#guestTable tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+        
+        const cardBody = document.querySelector('#guestTable').closest('.card-body');
+        cardBody.insertBefore(searchInput, document.querySelector('#guestTable'));
+    });
+</script>
+{% endblock %}
+{% endblock %}

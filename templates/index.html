@@ -1,0 +1,118 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="row align-items-center min-vh-100">
+        <div class="col-lg-6">
+            <h1 class="display-4 fw-bold text-primary mb-4">
+                Welcome to Events Paradise
+            </h1>
+            <p class="lead mb-4">
+                Streamline your event management with our comprehensive system. 
+                From planning to execution, we've got you covered with automated scheduling, 
+                guest management, vendor coordination, and real-time analytics.
+            </p>
+            <div class="d-flex gap-3">
+                {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-person-plus"></i> Get Started
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-speedometer2"></i> Go to Dashboard
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-lg">
+                <div class="card-body p-5">
+                    <h3 class="card-title mb-4">Key Features</h3>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-calendar-check text-primary fs-4 me-3"></i>
+                                <div>
+                                    <h6 class="mb-0">Event Scheduling</h6>
+                                    <small class="text-muted">Automated calendar management</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-people text-success fs-4 me-3"></i>
+                                <div>
+                                    <h6 class="mb-0">Guest Management</h6>
+                                    <small class="text-muted">RSVP tracking & check-ins</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-truck text-warning fs-4 me-3"></i>
+                                <div>
+                                    <h6 class="mb-0">Vendor Coordination</h6>
+                                    <small class="text-muted">Contract & payment tracking</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-credit-card text-info fs-4 me-3"></i>
+                                <div>
+                                    <h6 class="mb-0">Payment Processing</h6>
+                                    <small class="text-muted">Secure transaction handling</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Use Cases Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-5">Perfect for All Types of Events</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-heart-fill text-danger fs-2 mb-2"></i>
+                    <h6>Weddings</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-briefcase-fill text-primary fs-2 mb-2"></i>
+                    <h6>Corporate Events</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-music-note-beamed text-success fs-2 mb-2"></i>
+                    <h6>Concerts</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-graduation-cap-fill text-warning fs-2 mb-2"></i>
+                    <h6>Conferences</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,322 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2">Manage Vendors - {{ event.title }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('events') }}">Events</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('event_details', event_id=event.id) }}">{{ event.title }}</a></li>
+                <li class="breadcrumb-item active">Manage Vendors</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('event_details', event_id=event.id) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Event
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Vendor Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Vendors</h6>
+                        <h3 class="mb-0">{{ vendors|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-truck fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Paid Vendors</h6>
+                        <h3 class="mb-0">{{ vendors|selectattr('payment_status', 'equalto', 'paid')|list|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-cash-stack fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Pending Payment</h6>
+                        <h3 class="mb-0">{{ vendors|selectattr('payment_status', 'equalto', 'pending')|list|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-clock fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Contract Value</h6>
+                        <h3 class="mb-0">
+                            {% set total_contracts = vendors|map(attribute='contract_amount')|sum %}
+                            ${{ "%.0f"|format(total_contracts) }}
+                        </h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-currency-dollar fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Vendor Form -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-truck"></i> Add New Vendor</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="name" class="form-label">Vendor Name *</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="service_type" class="form-label">Service Type *</label>
+                    <select class="form-select" id="service_type" name="service_type" required>
+                        <option value="">Select Service Type</option>
+                        <option value="catering">Catering</option>
+                        <option value="decoration">Decoration</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="photography">Photography</option>
+                        <option value="videography">Videography</option>
+                        <option value="sound">Sound System</option>
+                        <option value="lighting">Lighting</option>
+                        <option value="transportation">Transportation</option>
+                        <option value="security">Security</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="contract_amount" class="form-label">Contract Amount ($)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control" id="contract_amount" name="contract_amount" 
+                               min="0" step="0.01" value="0.00">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="phone" class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" id="phone" name="phone">
+                </div>
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-truck"></i> Add Vendor
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Vendor List -->
+<div class="card shadow">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Vendor List</h5>
+        <div>
+            <button class="btn btn-light btn-sm" onclick="exportVendors()">
+                <i class="bi bi-download"></i> Export
+            </button>
+            <button class="btn btn-light btn-sm" onclick="sendContracts()">
+                <i class="bi bi-envelope"></i> Send Contracts
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if vendors %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="vendorTable">
+                    <thead>
+                        <tr>
+                            <th>Vendor Name</th>
+                            <th>Service Type</th>
+                            <th>Contact Info</th>
+                            <th>Contract Amount</th>
+                            <th>Payment Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vendor in vendors %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-building fs-4 me-2 text-muted"></i>
+                                        <div>
+                                            <div class="fw-bold">{{ vendor.name }}</div>
+                                            <small class="text-muted">Added {{ vendor.created_at.strftime('%b %d, %Y') }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ vendor.service_type }}</span>
+                                </td>
+                                <td>
+                                    <div>
+                                        {% if vendor.email %}
+                                            <small><i class="bi bi-envelope"></i> {{ vendor.email }}</small><br>
+                                        {% endif %}
+                                        {% if vendor.phone %}
+                                            <small><i class="bi bi-telephone"></i> {{ vendor.phone }}</small>
+                                        {% endif %}
+                                        {% if not vendor.email and not vendor.phone %}
+                                            <span class="text-muted">No contact info</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold">${{ "%.2f"|format(vendor.contract_amount) }}</span>
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm" onchange="updatePaymentStatus({{ vendor.id }}, this.value)">
+                                        <option value="pending" {% if vendor.payment_status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="partial" {% if vendor.payment_status == 'partial' %}selected{% endif %}>Partial</option>
+                                        <option value="paid" {% if vendor.payment_status == 'paid' %}selected{% endif %}>Paid</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewVendor({{ vendor.id }})">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="editVendor({{ vendor.id }})">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" onclick="makePayment({{ vendor.id }})">
+                                            <i class="bi bi-cash"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteVendor({{ vendor.id }})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-truck fs-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No vendors added yet</h4>
+                <p class="text-muted">Start by adding your first vendor to the event.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    function updatePaymentStatus(vendorId, status) {
+        // In a real application, this would make an AJAX call to update the payment status
+        console.log(`Updating payment status for vendor ${vendorId} to ${status}`);
+        // Show success message
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show';
+        alert.innerHTML = `Payment status updated to ${status}! <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.querySelector('.card-body').prepend(alert);
+        setTimeout(() => alert.remove(), 3000);
+    }
+
+    function viewVendor(vendorId) {
+        // In a real application, this would show vendor details in a modal
+        alert(`View vendor details for vendor ID: ${vendorId}`);
+    }
+
+    function editVendor(vendorId) {
+        // In a real application, this would open an edit form
+        alert(`Edit vendor details for vendor ID: ${vendorId}`);
+    }
+
+    function makePayment(vendorId) {
+        // In a real application, this would open a payment form
+        const amount = prompt('Enter payment amount:');
+        if (amount && !isNaN(amount) && parseFloat(amount) > 0) {
+            alert(`Payment of $${amount} would be processed for vendor ID: ${vendorId}`);
+        }
+    }
+
+    function deleteVendor(vendorId) {
+        if (confirm('Are you sure you want to delete this vendor?')) {
+            // In a real application, this would make an AJAX call to delete the vendor
+            console.log(`Deleting vendor ${vendorId}`);
+            // Remove the row from the table
+            const row = event.target.closest('tr');
+            row.remove();
+            
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = 'Vendor deleted successfully! <button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            document.querySelector('.card-body').prepend(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+    }
+
+    function exportVendors() {
+        // In a real application, this would export the vendor list to CSV/Excel
+        alert('Export functionality would generate a CSV file with all vendor information including names, service types, contact details, and payment status.');
+    }
+
+    function sendContracts() {
+        // In a real application, this would send contract emails to all vendors
+        alert('Contract emails would be sent to all vendors with their service agreements and payment terms.');
+    }
+
+    // Initialize search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'form-control form-control-sm mb-3';
+        searchInput.placeholder = 'Search vendors...';
+        searchInput.addEventListener('keyup', function() {
+            const filter = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#vendorTable tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+        
+        const cardBody = document.querySelector('#vendorTable').closest('.card-body');
+        cardBody.insertBefore(searchInput, document.querySelector('#vendorTable'));
+    });
+</script>
+{% endblock %}
+{% endblock %}
